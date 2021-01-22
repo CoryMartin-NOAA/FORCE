@@ -3,6 +3,9 @@ import yaml
 import argparse
 import glob
 import ioda
+import numpy as np
+import netCDF4 as nc
+import os
 
 
 def calc_mean(obsspace):
@@ -23,23 +26,83 @@ def calc_mean(obsspace):
     and will compute and save means from JEDI IODA obs spaces
     and put them in an output file for archival
     """
+    # IODA engines file layout
     iodalayout = 1  # is this the right value?
     if 'iodaformat' in obsspace:
         if obsspace['iodaformat'] == 'classic':
             iodalayout = 0
+    # quality control
+    qcvar = None
+    qcvals = None
+    if 'qcvar' in obsspace:
+        qcvar = obsspace['qcvar']
+        qcvals = obsspace['qcvals']
     # get list of available input files
     iodafiles = glob.glob(obsspace['datapath']+'*')
     # dictionary of lists to append to
     ioda = {}
     for vname in obsspace['variables']:
         ioda[vname] = []
+    if qcvar:
+        ioda['QC'] = []
+    # read data from IODA and put in dictionary of lists
     for iodafile in iodafiles:
         iodatmp = read_ioda_obsspace(iodafile, obsspace['variables'],
-                                     qcvar=obsspace['qcvar'],
+                                     qcvar=qcvar, qcvals=qcvals,
                                      iodalayout=iodalayout)
+        for vname in obsspace['variables']:
+            ioda[vname].append(iodatmp[vname])
+        ioda['QC'].append(iodatmp['QC'])
+    # combine each list of arrays into one long numpy array
+    for vname in ioda:
+        ioda[vname] = np.concatenate(ioda[vname], axis=0)
+    # RMSE and MAE
+    RMSE = {}
+    MAE = {}
+    counts = {}
+    for vname in obsspace['variables']:
+        RMSE[vname] = np.sqrt(((ioda[vname])**2).mean())
+        MAE[vname] = np.nanmean(ioda[vname])
+        counts[vname] = len(ioda[vname])
+    # save this to a specified file
+    if obsspace['outformat'] == 'csv':
+        # save to csv file
+        write_means_csv(obsspace, RMSE, MAE, counts)
+    elif obsspace['outformat'] == 'netcdf':
+        # save to netCDF file
+        write_means_nc(obsspace, RMSE, MAE, counts)
+    else:
+        raise ValueError("outformat must be 'csv' or 'netcdf'")
 
 
-def read_ioda_obsspace(iodafile, varlist, qcvar=None, iodalayout=0):
+def write_means_csv(configdict, RMSE, MAE, counts):
+    exists = False
+    # first check to see if file exists
+    exists = True if os.path.isfile(configdict['outfile']) else False
+    with open(configdict['outfile'], 'a') as outfile:
+        if not exists:
+            outstr = 'cycle,'
+            for vname in configdict['variables']:
+                outstr = outstr + vname+'_RMSE,'
+                outstr = outstr + vname+'_MAE,'
+                outstr = outstr + vname+'_counts,'
+            outstr = outstr + '\n'
+            outfile.write(outstr)
+        outstr = configdict['timestamp'].strftime('%Y%m%d%H') + ','
+        for vname in configdict['variables']:
+            outstr = outstr + f"{RMSE[vname]},{MAE[vname]},{counts[vname]},"
+        outstr = outstr + '\n'
+        outfile.write(outstr)
+
+
+def write_means_nc(configdict, RMSE, MAE, counts):
+    exists = False
+    # first check to see if file exists
+    exists = True if os.path.ispath(configdict['outfile']) else False
+
+
+def read_ioda_obsspace(iodafile, varlist, qcvar=None,
+                       qcvals=None, iodalayout=0):
     """
     read_ioda_obsspace will read an IODA obsspace for a given input file
     and return a dictionary of all variables in varlist
@@ -52,14 +115,21 @@ def read_ioda_obsspace(iodafile, varlist, qcvar=None, iodalayout=0):
     dlp = ioda._ioda_python.DLP.DataLayoutPolicy.generate(
                ioda._ioda_python.DLP.DataLayoutPolicy.Policies(iodalayout))
     og = ioda.ObsGroup(g, dlp)
-    for v in varlist:
-        iodaVar = og.vars.open(v)
-        iodaData = iodaVar.readNPArray.float()
+    iodaout = {}
     if qcvar:
         iodaQCVar = og.vars.open(qcvar)
         iodaQC = iodaQCVar.readNPArray.int()
-    print(iodaQC)
-    print(iodaData)
+        goodobs = np.isin(iodaQC, qcvals)
+        goodobs = np.where(goodobs)
+        iodaQC = iodaQC[goodobs]
+        iodaout['QC'] = iodaQC
+    for v in varlist:
+        iodaVar = og.vars.open(v)
+        iodaData = iodaVar.readNPArray.float()
+        if qcvar:
+            iodaData = iodaData[goodobs]
+        iodaout[v] = iodaData
+    return iodaout
 
 
 if __name__ == '__main__':
