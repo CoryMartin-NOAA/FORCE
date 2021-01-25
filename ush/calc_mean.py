@@ -98,7 +98,30 @@ def write_means_csv(configdict, RMSE, MAE, counts):
 def write_means_nc(configdict, RMSE, MAE, counts):
     exists = False
     # first check to see if file exists
-    exists = True if os.path.ispath(configdict['outfile']) else False
+    exists = True if os.path.isfile(configdict['outfile']) else False
+    if not exists:
+        with nc.Dataset(configdict['outfile'], mode='w') as outfile:
+            # create dimensions and variables
+            time_dim = outfile.createDimension("time", None)
+            str_dim = outfile.createDimension("timestrlen", 10)
+            timestamp = outfile.createVariable("timestamp", "S1",
+                                               ("time", "timestrlen"))
+            timestamp.long_name = "valid time in YYYYMMDDHH"
+            for vname in configdict['variables']:
+                varstr = vname + '_RMSE'
+                outvar1 = outfile.createVariable(varstr, "f4", ("time"))
+                varstr = vname + '_MAE'
+                outvar2 = outfile.createVariable(varstr, "f4", ("time"))
+                varstr = vname + '_counts'
+                outvar3 = outfile.createVariable(varstr, "i4", ("time"))
+    with nc.Dataset(configdict['outfile'], mode='a') as outfile:
+        # determine index in unlimited dimension
+        timestamp = outfile.variables['timestamp']
+        idx = timestamp.shape[0]
+        # write out data to file
+        tmpstr = np.array(configdict['timestamp'].strftime('%Y%m%d%H'),
+                         dtype="S10")
+        timestamp[idx,:] = nc.stringtochar(tmpstr)
 
 
 def read_ioda_obsspace(iodafile, varlist, qcvar=None,
