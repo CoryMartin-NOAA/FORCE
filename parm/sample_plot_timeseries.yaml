@@ -1,0 +1,17 @@
+plot_timeseries:
+  - timeseries:
+    label: F-O
+    datafile: ./jedi_means.nc
+    dataformat: netcdf
+    color: blue
+    varname: nitrogen_dioxide_in_tropospheric_column@ombg_RMSE
+  - timeseries:
+    label: A-O
+    datafile: ./jedi_means.nc
+    dataformat: netcdf
+    color: red
+    varname: nitrogen_dioxide_in_tropospheric_column@oman_RMSE
+plot_settings:
+  outfile: ./test.png
+  ylabel: mol/m-2
+  title: RRFS-CMAQ TROPOMI NO2 JEDI 3DVar Initial Testing Mean RMSE

@@ -1,0 +1,25 @@
+calc_mean:
+  - obs space:
+      name: sample
+      datapath: /scratch2/NCEPDEV/stmp1/Cory.R.Martin/RRFS-CMAQ/no2da_jan2021/output/hofx/tropomi_no2_3dvar_2019080118_6_
+      variables:
+      - nitrogen_dioxide_in_tropospheric_column@ombg
+      - nitrogen_dioxide_in_tropospheric_column@oman
+      qcvar: nitrogen_dioxide_in_tropospheric_column@EffectiveQC0
+      qcvals: [0]
+      outfile: ./jedi_means.nc
+      outformat: netcdf
+      iodaformat: classic
+      timestamp: 2019-08-01T18:00:00Z
+  - obs space:
+      name: sample
+      datapath: /scratch2/NCEPDEV/stmp1/Cory.R.Martin/RRFS-CMAQ/no2da_jan2021/output/hofx/tropomi_no2_3dvar_2019080218_6_
+      variables:
+      - nitrogen_dioxide_in_tropospheric_column@ombg
+      - nitrogen_dioxide_in_tropospheric_column@oman
+      qcvar: nitrogen_dioxide_in_tropospheric_column@EffectiveQC0
+      qcvals: [0]
+      outfile: ./jedi_means.nc
+      outformat: netcdf
+      iodaformat: classic
+      timestamp: 2019-08-02T18:00:00Z
