@@ -122,6 +122,17 @@ def write_means_nc(configdict, RMSE, MAE, counts):
         tmpstr = np.array(configdict['timestamp'].strftime('%Y%m%d%H'),
                          dtype="S10")
         timestamp[idx,:] = nc.stringtochar(tmpstr)
+        for vname in configdict['variables']:
+            varstr = vname + '_RMSE'
+            outvar = outfile.variables[varstr]
+            outvar[idx] = RMSE[vname]
+            varstr = vname + '_MAE'
+            outvar = outfile.variables[varstr]
+            outvar[idx] = MAE[vname]
+            varstr = vname + '_counts'
+            outvar = outfile.variables[varstr]
+            outvar[idx] = counts[vname]
+
 
 
 def read_ioda_obsspace(iodafile, varlist, qcvar=None,
