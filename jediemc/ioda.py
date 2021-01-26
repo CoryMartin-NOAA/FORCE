@@ -38,6 +38,7 @@ class ObsSpace:
             iodavar = og.vars.open("longitude@MetaData")
             values = iodavar.readVector.float()
             _lons.append(values)
+        # the var list comes in as just a print/string, split it into a list
         _varlist = og.vars.list
         self.varnames = str(_varlist)[55:-3].split()
         self.nvars = len(self.varnames)
@@ -54,6 +55,7 @@ class ObsSpace:
         returns numpy array of either floats or integers depending on
         type of requested variable
         """
+        # NOTE/TODO: revisit this with a 2D array, probaby need readNPArray...
         _data = []
         for f in self.iodafiles:
             og = self._open_ioda_obsgroup(f)
