@@ -48,6 +48,30 @@ class ObsSpace:
         del _lons
 
 
+    def get_variable(self, varname):
+        """
+        grab the data from this obs space for a requested string 'varname'
+        returns numpy array of either floats or integers depending on
+        type of requested variable
+        """
+        _data = []
+        for f in self.iodafiles:
+            og = self._open_ioda_obsgroup(f)
+            iodavar = og.vars.open(varname)
+            # determine if float or int
+            if iodavar.isA2(ioda._ioda_python.Types.float):
+                values = iodavar.readVector.float()
+                _data.append(values)
+            elif iodavar.isA2(ioda._ioda_python.Types.int):
+                values = iodavar.readVector.int()
+                _data.append(values)
+            else:
+                raise TypeError("Only float and int supported for now")
+        data = np.concatenate(_data, axis=0)
+        data[data>9e36] = np.nan
+        return data
+
+
     def get_datetimes(self):
         """
         grab the date / time of each observation in this obs space
