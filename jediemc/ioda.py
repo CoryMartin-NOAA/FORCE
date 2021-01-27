@@ -4,24 +4,23 @@ import os
 import glob
 import datetime as dt
 
+
 class ObsSpace:
 
     def __repr__(self):
         return f"ObsSpace({self.name},{self.iodafiles})"
 
-
     def __str__(self):
         return f"IODA ObsSpace Object - {self.name}"
 
-
-    def __init__(self, path, name = 'NoName', iodalayout=0):
+    def __init__(self, path, name='NoName', iodalayout=0):
         self.name = name
         self.layout = iodalayout
         # determine if path is a file or wildcard
         if os.path.isfile(path):
             self.iodafiles = [path]
-        elif os.path.isfile(glob.glob(path)[0]):
-            self.iodafiles = sorted(glob.glob(path))
+        elif os.path.isfile(glob.glob(path + '*')[0]):
+            self.iodafiles = sorted(glob.glob(path + '*'))
         else:
             raise OSError(f"{path} does not specify a valid path to file(s)")
         # grab lat, lon
@@ -48,7 +47,6 @@ class ObsSpace:
         del _lats
         del _lons
 
-
     def get_variable(self, varname):
         """
         grab the data from this obs space for a requested string 'varname'
@@ -70,9 +68,8 @@ class ObsSpace:
             else:
                 raise TypeError("Only float and int supported for now")
         data = np.concatenate(_data, axis=0)
-        data[data>9e36] = np.nan
+        data[data > 9e36] = np.nan
         return data
-
 
     def get_datetimes(self):
         """
@@ -96,10 +93,8 @@ class ObsSpace:
         del _times
         return datetimes
 
-
     def __len__(self):
         return len(self.lats)
-
 
     def _open_ioda_obsgroup(self, filepath):
         # open the obs group for a specified file and return an object
