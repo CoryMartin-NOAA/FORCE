@@ -68,7 +68,8 @@ class ObsSpace:
             else:
                 raise TypeError("Only float and int supported for now")
         data = np.concatenate(_data, axis=0)
-        data[data > 9e36] = np.nan
+        if iodavar.isA2(ioda._ioda_python.Types.float):
+            data[data > 9e36] = np.nan
         return data
 
     def get_datetimes(self):
