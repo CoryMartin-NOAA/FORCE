@@ -38,8 +38,7 @@ class ObsSpace:
             values = iodavar.readVector.float()
             _lons.append(values)
         # the var list comes in as just a print/string, split it into a list
-        _varlist = og.vars.list
-        self.varnames = str(_varlist)[55:-3].split()
+        self.varnames = og.vars.list()
         self.nvars = len(self.varnames)
         self.lats = np.concatenate(_lats, axis=0)
         self.lons = np.concatenate(_lons, axis=0)
